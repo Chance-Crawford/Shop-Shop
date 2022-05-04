@@ -2,6 +2,8 @@ import React from 'react';
 import { useStoreContext } from '../../utils/Globalstate.js';
 import { REMOVE_FROM_CART, UPDATE_CART_QUANTITY } from '../../utils/actions';
 
+import { idbPromise } from "../../utils/helpers";
+
 const CartItem = ({ item }) => {
   // Note that we only destructured the dispatch() function from the 
   // useStoreContext Hook, because the CartItem component has no need to read state.
@@ -16,6 +18,9 @@ const CartItem = ({ item }) => {
       _id: item._id,
       purchaseQuantity: parseInt(item.purchaseQuantity) - 1
     });
+
+    // remove 1 quantity from the indexeDB store as well.
+    idbPromise('cart', 'delete', { ...item, purchaseQuantity: parseInt(item.purchaseQuantity) - 1 });
   };
 
   // when a user manually enters a quantity for an item into
@@ -23,18 +28,24 @@ const CartItem = ({ item }) => {
   const onChange = (e) => {
     const value = e.target.value;
   
+    // if value is 0, delete the item from the global state cart and the
+    // indexedDB store.
     if (value === '0') {
       dispatch({
         type: REMOVE_FROM_CART,
         _id: item._id,
-        purchaseQuantity: parseInt(item.purchaseQuantity) - 1
+        purchaseQuantity: 0
       });
+
+      idbPromise('cart', 'delete', { ...item, purchaseQuantity: 0 });
     } else {
       dispatch({
         type: UPDATE_CART_QUANTITY,
         _id: item._id,
         purchaseQuantity: parseInt(value)
       });
+
+      idbPromise('cart', 'put', { ...item, purchaseQuantity: parseInt(value) });
     }
   };
 

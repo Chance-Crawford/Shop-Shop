@@ -1,3 +1,5 @@
+// see google docs redux and stripe in MERN
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import {

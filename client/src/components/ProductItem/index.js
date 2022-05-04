@@ -5,6 +5,8 @@ import { pluralize } from "../../utils/helpers"
 import { useStoreContext } from '../../utils/Globalstate.js';
 import { ADD_TO_CART, UPDATE_CART_QUANTITY } from '../../utils/actions';
 
+import { idbPromise } from "../../utils/helpers";
+
 function ProductItem(item) {
   const {
     image,
@@ -34,11 +36,15 @@ function ProductItem(item) {
     // entries. Instead, the value of the quantity input (abbreviated as "qty") will 
     // increment by one on each click.
     if (itemInCart) {
-      console.log(itemInCart);
-      console.log('ID: ' + _id);
       dispatch({
         type: UPDATE_CART_QUANTITY,
         _id: _id,
+        purchaseQuantity: parseInt(itemInCart.purchaseQuantity) + 1
+      });
+      // after updating the global store, also update indexedDB so we can perform
+      // this action offline as well.
+      idbPromise('cart', 'put', {
+        ...itemInCart,
         purchaseQuantity: parseInt(itemInCart.purchaseQuantity) + 1
       });
     } else {
@@ -46,6 +52,7 @@ function ProductItem(item) {
         type: ADD_TO_CART,
         product: { ...item, purchaseQuantity: 1 }
       });
+      idbPromise('cart', 'put', { ...item, purchaseQuantity: 1 });
     }
   };
 

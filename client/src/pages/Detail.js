@@ -14,6 +14,9 @@ import {
 import { QUERY_PRODUCTS } from '../utils/queries';
 import spinner from '../assets/spinner.gif';
 
+// see ProductList/index.js for comments
+import { idbPromise } from "../utils/helpers";
+
 function Detail() {
   
   const [state, dispatch] = useStoreContext();
@@ -26,6 +29,10 @@ function Detail() {
 
   const { products, cart } = state;
 
+  // remember that you'll be making fantastic use of the useEffect() Hook React provides. It 
+  // will constantly check the dependency array for a change in any of the values listed 
+  // in it and continue to run the useEffect() Hook's callback function until that data 
+  // stops changing and you're good to go.
   // the useEffect() Hook here has to check for a couple of things. It first 
   // checks to see if there's data in our global state's products array. If there 
   // is, we use it to figure out which product is the current one that we want to 
@@ -43,6 +50,7 @@ function Detail() {
   // The Hook's functionality is dependent on them to work and only runs when it detects 
   // that they've changed in value! This is known as the dependency array.
   useEffect(() => {
+    // already in global store
     if (products.length) {
       // Why are we saving the current product locally and not to the global state?
       // This is one of those cases where saving a single product to the global state object 
@@ -53,15 +61,28 @@ function Detail() {
       // components!
       setCurrentProduct(products.find(product => product._id === id));
     } 
-    // else if product query has returned with data.
+    // retrieved from server
     else if (data) {
-      // save products to global storage
       dispatch({
         type: UPDATE_PRODUCTS,
         products: data.products
       });
+
+      data.products.forEach((product) => {
+        idbPromise('products', 'put', product);
+      });
     }
-  }, [products, data, dispatch, id]);
+    // if offline, get the products cached in idb
+    else if (!loading) {
+      idbPromise('products', 'get').then((indexedProducts) => {
+        // update global store with the cached products from indexDB
+        dispatch({
+          type: UPDATE_PRODUCTS,
+          products: indexedProducts
+        });
+      });
+    }
+}, [products, data, loading, dispatch, id]);
 
   // see ProductItem/index.js for comments
   const addToCart = () => {
@@ -73,11 +94,25 @@ function Detail() {
         _id: id,
         purchaseQuantity: parseInt(itemInCart.purchaseQuantity) + 1
       });
+      // if we're updating quantity of an item in the cart, also update the cart in
+      // indexedDB. use existing item data and increment purchaseQuantity 
+      // value by one.
+      // Now, every time we update the global state, that update will also be 
+      // reflected in IndexedDB. This way, we can retrieve that data from IndexedDB 
+      // later—and it won't be out of sync with what the global state should look like.
+      idbPromise('cart', 'put', {
+        // this is saying to update the item in the cart to increase by 1 quantity, inside
+        // the indexedDB
+        ...itemInCart,
+        purchaseQuantity: parseInt(itemInCart.purchaseQuantity) + 1
+      });
     } else {
       dispatch({
         type: ADD_TO_CART,
         product: { ...currentProduct, purchaseQuantity: 1 }
       });
+      // if product isn't in the cart yet, add it to the current shopping cart in IndexedDB
+      idbPromise('cart', 'put', { ...currentProduct, purchaseQuantity: 1 });
     }
   };
 
@@ -95,6 +130,10 @@ function Detail() {
         purchaseQuantity: parseInt(itemInCart.purchaseQuantity) - 1
       }
     );
+
+    // upon removal from cart, delete the item from IndexedDB 
+    // using the `currentProduct._id` to locate what to remove
+    idbPromise('cart', 'delete', { ...itemInCart, purchaseQuantity: parseInt(itemInCart.purchaseQuantity) - 1 });
   };
 
   return (

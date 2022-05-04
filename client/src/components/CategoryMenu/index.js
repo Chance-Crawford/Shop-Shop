@@ -21,6 +21,9 @@ import { QUERY_CATEGORIES } from '../../utils/queries';
 // container or update it using the dispatch function.
 import { useStoreContext } from "../../utils/Globalstate.js";
 
+// function to start index db database connection and read write privelages
+import { idbPromise } from '../../utils/helpers';
+
 function CategoryMenu() {
 
   // Since we will want to add offline capabilities later, we'll query our 
@@ -37,7 +40,9 @@ function CategoryMenu() {
   const { categories } = state;
 
   // query to get the categories data from database
-  const { data: categoryData } = useQuery(QUERY_CATEGORIES);
+  const { loading, data: categoryData } = useQuery(QUERY_CATEGORIES);
+
+
 
   // see useEffect import statement for more comments.
   // Now when this component loads and the response from the useQuery() Hook returns, 
@@ -54,17 +59,29 @@ function CategoryMenu() {
   // finishes, and we have data in categoryData, the useEffect() Hook runs again 
   // and notices that categoryData exists! Because of that, it does its job and executes 
   // the dispatch() function.
-  useEffect(() => {
+  useEffect(() => {    
     // if categoryData exists or has changed from the response of useQuery, then run dispatch()
     if (categoryData) {
-      // execute our dispatch function to change the categories in the
-      // global state.
       dispatch({
         type: UPDATE_CATEGORIES,
         categories: categoryData.categories
       });
+
+      // see ProductList/index.js for comments
+      categoryData.categories.forEach(category => {
+        idbPromise('categories', 'put', category);
+      });
     }
-  }, [categoryData, dispatch]);
+    // see ProductList/index.js for comments
+    else if (!loading) {
+      idbPromise('categories', 'get').then(categories => {
+        dispatch({
+          type: UPDATE_CATEGORIES,
+          categories: categories
+        });
+      });
+    }
+  }, [categoryData, loading, dispatch]);
 
   const handleClick = id => {
     dispatch({
