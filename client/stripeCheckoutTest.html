@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <!-- cdn for stripe library -->
+  <script src="https://js.stripe.com/v3/"></script>
+
+  <script>
+    // this file is used as an example of how to get to a stripe checkout session.
+    // to go to a new session, go to graphql and generate a checkout session using
+    // the checkout query. Then paste the session id that is returned from the query into
+    // the sessionIId in stripe.redirectToCheckout().
+    // use client-side test api key 
+    var stripe = Stripe('pk_test_TYooMQauvdEDq54NiTphI7jx');
+
+    // immediately redirect to stripe using your checkout session
+    stripe.redirectToCheckout({
+      sessionId: 'cs_test_b1iK9tJyeZoq4NXlgh2cBbsbK9xkmScfwu1QLGg0pLEOqbrVCTOM9McqdZ'
+    });
+  </script>
+</body>
+</html>

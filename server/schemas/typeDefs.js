@@ -1,5 +1,7 @@
 const { gql } = require('apollo-server-express');
 
+// for type Checkout see Global state, Stripe and IndexedDB in MERN, Create a GraphQL 
+// Query to Generate a Stripe Session
 const typeDefs = gql`
   type Category {
     _id: ID
@@ -22,6 +24,10 @@ const typeDefs = gql`
     products: [Product]
   }
 
+  type Checkout {
+    session: ID
+  }
+
   type User {
     _id: ID
     firstName: String
@@ -41,6 +47,7 @@ const typeDefs = gql`
     product(_id: ID!): Product
     user: User
     order(_id: ID!): Order
+    checkout(products: [ID]!): Checkout
   }
 
   type Mutation {

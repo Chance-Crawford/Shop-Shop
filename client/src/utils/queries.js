@@ -60,3 +60,14 @@ export const QUERY_USER = gql`
     }
   }
 `;
+
+// see google docs, Global state, Stripe and IndexedDB in MERN, Redirect to Stripe Checkout 
+// on the Front End
+// set up the query to create a checkout session using stripe
+export const QUERY_CHECKOUT = gql`
+  query getCheckout($products: [ID]!) {
+    checkout(products: $products) {
+      session
+    }
+  }
+`;
